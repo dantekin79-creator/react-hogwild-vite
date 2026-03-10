@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import App from "../components/App";
 import hogs from "../porkers_data";
 
@@ -12,26 +12,29 @@ describe("Hog App", () => {
     });
   });
 
-  it("displays additional hog details when a tile is clicked", () => {
+  it("displays additional hog details when a tile is clicked", async () => {
     render(<App />);
     const index = Math.floor(Math.random() * 11)
     const hogTile = screen.getByText(hogs[index].name);
-    hogTile.parentElement.parentElement
     fireEvent.click(hogTile);
 
-    expect(screen.getByText(`Specialty: ${hogs[index].specialty}`)).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.getByText(`Specialty: ${hogs[index].specialty}`)).toBeInTheDocument();
+    });
     expect(screen.getByText(hogs[index].weight)).toBeInTheDocument();
     expect(screen.getByText(hogs[index].greased ? "Greased" : "Nongreased")).toBeInTheDocument();
     expect(screen.getByText(hogs[index]["highest medal achieved"])).toBeInTheDocument();
   });
 
-  it("filters hogs by greased status", () => {
+  it("filters hogs by greased status and updates view", async () => {
     render(<App />);
     const filterCheckbox = screen.getByLabelText("Greased Pigs Only?");
     fireEvent.click(filterCheckbox);
 
-    hogs.filter((hog) => hog.greased).forEach((hog) => {
-      expect(screen.getByText(hog.name)).toBeInTheDocument();
+    await waitFor(() => {
+        hogs.filter((hog) => hog.greased).forEach((hog) => {
+            expect(screen.getByText(hog.name)).toBeInTheDocument();
+        });
     });
 
     hogs.filter((hog) => !hog.greased).forEach((hog) => {
@@ -39,27 +42,29 @@ describe("Hog App", () => {
     });
   });
 
-  it("sorts hogs by name or weight", () => {
+  it("sorts hogs by name or weight and updates view", async () => {
     render(<App />);
 
     const sortBySelect = screen.getByLabelText("Sort by:");
     
     fireEvent.change(sortBySelect, { target: { value: "name" } });
 
-    const sortedByName = [...hogs].sort((a, b) => a.name.localeCompare(b.name));
-    const renderedHogNamesByName = screen.getAllByRole("heading", { level: 3 }).map((el) => el.textContent);
-
-    expect(renderedHogNamesByName).toEqual(sortedByName.map((hog) => hog.name));
+    await waitFor(() => {
+        const sortedByName = [...hogs].sort((a, b) => a.name.localeCompare(b.name));
+        const renderedHogNamesByName = screen.getAllByRole("heading", { level: 3 }).map((el) => el.textContent);
+        expect(renderedHogNamesByName).toEqual(sortedByName.map((hog) => hog.name));
+    });
 
     fireEvent.change(sortBySelect, { target: { value: "weight" } });
 
-    const sortedByWeight = [...hogs].sort((a, b) => a.weight - b.weight);
-    const renderedHogNamesByWeight = screen.getAllByRole("heading", { level: 3 }).map((el) => el.textContent);
-
-    expect(renderedHogNamesByWeight).toEqual(sortedByWeight.map((hog) => hog.name));
+    await waitFor(() => {
+        const sortedByWeight = [...hogs].sort((a, b) => a.weight - b.weight);
+        const renderedHogNamesByWeight = screen.getAllByRole("heading", { level: 3 }).map((el) => el.textContent);
+        expect(renderedHogNamesByWeight).toEqual(sortedByWeight.map((hog) => hog.name));
+    });
   });
 
-  it("hides a hog when the hide button is clicked", () => {
+  it("hides a hog when the hide button is clicked", async () => {
     render(<App />);
     const sortBySelect = screen.getByLabelText("Sort by:");
     fireEvent.change(sortBySelect, { target: { value: "name" } });
@@ -69,10 +74,12 @@ describe("Hog App", () => {
 
     const sortedHogsByName = [...hogs].sort((a, b) => a.name.localeCompare(b.name));
 
-    expect(screen.queryByText(sortedHogsByName[0].name)).not.toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.queryByText(sortedHogsByName[0].name)).not.toBeInTheDocument();
+    });
   });
 
-  it("adds a new hog via the form", () => {
+  it("adds a new hog via the form and updates the view", async () => {
     render(<App />);
     const nameInput = screen.getByLabelText("Name:");
     const weightInput = screen.getByLabelText("Weight:");
@@ -86,7 +93,9 @@ describe("Hog App", () => {
     fireEvent.click(greasedCheckbox);
     fireEvent.click(addButton);
 
-    expect(screen.getByText("New Hog")).toBeInTheDocument();
+    await waitFor(() => {
+        expect(screen.getByText("New Hog")).toBeInTheDocument();
+    });
   });
 
   it("renders hog tiles using Semantic Cards", () => {
